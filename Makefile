@@ -5,7 +5,7 @@ NAME = libft_malloc_$(HOSTTYPE).so
 CC = gcc
 CC_FLAGS = -Wall -Werror -Wextra
 LIB = -L./libft -lft -lpthread
-INC = -I ./inc -I ./libft
+INC = -I ./inc -I ./libft/inc
 
 SRC = show_alloc_mem.c malloc.c
 SRC_DIR = ./src/

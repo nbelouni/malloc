@@ -6,7 +6,7 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/02 21:05:52 by nbelouni          #+#    #+#             */
-/*   Updated: 2017/01/02 19:46:08 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/06/25 14:07:26 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,30 +84,89 @@ void		allow_small_bloc(size_t size)
 	(void)size;
 }
 
+void		put_alloc_size(int type)
+{
+	t_page	*tmp = (t_page *)g_allowed.tiny;
+	int		total_size = 0;
+
+	(void)type;
+	while (tmp != NULL)
+	{
+		t_bloc	*tmp2 = (t_bloc *)(tmp->blocs);
+		total_size += sizeof(t_page);
+		while (tmp2 != NULL)
+		{
+			total_size += (sizeof(t_bloc)) + tmp2->size;
+			ft_putnbr(tmp2->size);
+			ft_putendl("");
+			tmp2 = tmp2->next;
+		}
+		tmp = tmp->next;
+	}
+	ft_putstr("tiny size : ");
+	ft_putnbr(total_size);
+	ft_putendl("");
+	ft_putstr("page size : ");
+	ft_putnbr(GETPAGESIZE);
+	ft_putendl("");
+}
+
+void		*get_new_page_and_bloc(size_t size)
+{
+	void	*tmp;
+	t_page	*tmp2;
+	t_bloc	*new_bloc;
+
+	tmp = mmap(0, GETPAGESIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+
+	((t_page *)(tmp))->allowed = size + sizeof(t_page) + sizeof(t_bloc);
+		((t_page *)(tmp))->next = NULL;
+	if (g_allowed.tiny != NULL)
+	{
+		tmp2 = g_allowed.tiny;
+		while (tmp2->next)
+			tmp2 = tmp2->next;
+		tmp2->next = tmp;
+	}
+	new_bloc = (t_bloc *)(tmp + sizeof(t_page));
+	new_bloc->start = new_bloc;
+	new_bloc->end = new_bloc->start + size + sizeof(t_bloc);;
+	new_bloc->size = size;
+	new_bloc->next = NULL;
+	((t_page *)(tmp))->blocs = new_bloc;
+
+	return (tmp);
+}
+
 void		*allow_tiny_bloc(size_t size)
 {
 //	ft_putendl("TINY");
 	void	*tmp;
-	void	*tmp2;
+	t_page	*tmp2;
 	t_bloc	*new_bloc;
 
 	tmp = NULL;
 	ft_putendl("_________1.0");
+	put_alloc_size(TINY);
 	if (g_allowed.tiny == NULL)
 	{
+		/*
 		tmp = mmap(0, GETPAGESIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 
 		((t_page *)(tmp))->allowed = size + sizeof(t_page) + sizeof(t_bloc);
 		((t_page *)(tmp))->next = NULL;
+		get_new_page(size);
 		new_bloc = (t_bloc *)(tmp + sizeof(t_page));
 		new_bloc->start = new_bloc;
 		new_bloc->end = new_bloc->start + size + sizeof(t_bloc);;
 		new_bloc->size = size;
 		new_bloc->next = NULL;
-		g_allowed.tiny = tmp;
-
+		((t_page *)(tmp))->blocs = new_bloc;
+*/
+		
+		g_allowed.tiny = get_new_page_and_bloc(size);
 		show_alloc_mem();
-		return (new_bloc + sizeof(t_bloc));
+		return (g_allowed.tiny->blocs);
 	}
 	ft_putendl("_________2.0");
 	tmp2 = g_allowed.tiny;
@@ -115,7 +174,7 @@ void		*allow_tiny_bloc(size_t size)
 	ft_putstr("page->allowed : ");
 	ft_putnbr(((t_page *)(tmp2))->allowed);
 	write(1, "\n", 1);
-	while (((t_page *)(tmp2)))
+	while (tmp2)
 	{
 		ft_putendl("_________2.1");
 		if ((size_t)(GETPAGESIZE - ((t_page *)(tmp2))->allowed) > sizeof(t_bloc) + size)
@@ -123,24 +182,26 @@ void		*allow_tiny_bloc(size_t size)
 		ft_putendl("_________2.2");
 			void *tmp3;
 
-			tmp3 = tmp2 + sizeof(t_page);
+			tmp3 = tmp2->blocs;
 			while (((t_bloc *)(tmp3))->next)
 			{
 //				print_bloc(tmp3, "tmp3", 0);
 				tmp3 = ((t_bloc *)(tmp3))->next;
 			}
-//			print_bloc(tmp3, "tmp3", 0);
-//			ft_putendl("##################");
+			print_bloc(tmp3, "tmp3", 0);
+			ft_putendl("##################");
 
-			new_bloc = (t_bloc *)(tmp2 + ((t_page *)(tmp2))->allowed);
+			new_bloc = tmp3 + sizeof(t_bloc) + ((t_bloc *)tmp3)->size;
 			((t_bloc *)(tmp3))->next = new_bloc;
 			new_bloc->start = new_bloc;
 			new_bloc->end = new_bloc + sizeof(t_bloc) + size;
 			new_bloc->size = size;
 			new_bloc->next = NULL;
-//			print_bloc(((t_bloc *)(tmp3))->next, "tmp3->next", 0);
+			print_bloc(((t_bloc *)(tmp3))->next, "tmp3->next", 0);
 			((t_page *)(tmp2))->allowed += size + sizeof(t_bloc);
 		ft_putendl("_________2.3");
+			
+			return (new_bloc);// + sizeof(t_bloc));
 			return (new_bloc + sizeof(t_bloc));
 		}
 		ft_putendl("_________2.4");
@@ -152,20 +213,19 @@ void		*allow_tiny_bloc(size_t size)
 	if (((t_page *)(tmp2))->next == NULL)
 	{
 	ft_putendl("_________2.5");
-		tmp = mmap(0, GETPAGESIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-		((t_page *)(tmp))->allowed = size;
-		((t_page *)(tmp))->next = NULL;
-		((t_page *)(tmp2))->next = tmp;
-		new_bloc = (t_bloc *)(tmp + sizeof(t_page));
+		new_bloc = get_new_page_and_bloc(size) + sizeof(t_page);
 	}
-	ft_putendl("_________3");
-	new_bloc->start = new_bloc;
-	new_bloc->end = new_bloc + sizeof(t_bloc) + size;
-	new_bloc->size = size;
-	new_bloc->next = NULL;
-	((t_page *)(tmp))->allowed += size + sizeof(t_page) + sizeof(t_bloc);
-	ft_putendl("_________4");
-//	show_alloc_mem();
+	else
+	{
+		ft_putendl("_________3");
+		new_bloc->start = new_bloc;
+		new_bloc->end = new_bloc + sizeof(t_bloc) + size;
+		new_bloc->size = size;
+		new_bloc->next = NULL;
+		((t_page *)(tmp))->allowed += size + sizeof(t_page) + sizeof(t_bloc);
+		ft_putendl("_________4");
+	}
+	show_alloc_mem();
 	return (new_bloc->start);
 }
 
@@ -180,7 +240,13 @@ void		*malloc(size_t size)
 	 * LARGE
 	 */
 	if (size > SMALL_ALLOC)
+	{
+		ft_putendl("LARGE");
+		void *tmp = allow_large_bloc(size);
+		print_bloc(((t_bloc *)tmp), "new_bloc", 0);
+		return(tmp + sizeof(t_bloc));
 		return (allow_large_bloc((int)size));
+	}
 
 	/*
 	 * SMALL
@@ -192,7 +258,15 @@ void		*malloc(size_t size)
 	 * TINY
 	 */
 	else
-		return(allow_tiny_bloc(size));
+	{
+		ft_putendl("TINY");
+		void *tmp = allow_tiny_bloc(size);
+		ft_putendl("ici ?");
+		print_bloc(((t_bloc *)tmp), "new_bloc", 0);
+		ft_putendl("ici ?");
+		return(tmp + sizeof(t_bloc));
+	}
+
 
 	return (NULL);
 }

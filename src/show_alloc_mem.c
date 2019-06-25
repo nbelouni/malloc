@@ -6,7 +6,7 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/14 18:05:56 by nbelouni          #+#    #+#             */
-/*   Updated: 2017/01/02 17:56:50 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/06/25 14:00:26 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,12 +15,14 @@
 void		print_bloc(void *bloc, const char *type_name, long int *n)
 {
 	ft_putstr(type_name);
-	ft_putstr(" : ");
-	ft_putxnbr((int)(((t_bloc *)(bloc))->start), 1);
+	ft_putstr(" : bloc size =  ");
+	ft_putnbr(sizeof(t_bloc));
+	ft_putstr(" , location = ");
+	ft_putnbr((int)(((t_bloc *)(bloc))->start));//, 1);
 	ft_putendl("");
-	ft_putxnbr((int)(((t_bloc *)(bloc))->start) + sizeof(t_bloc), 1);
+	ft_putnbr((int)(((t_bloc *)(bloc))->start) + sizeof(t_bloc));//, 1);
 	ft_putstr(" - ");
-	ft_putxnbr((int)(((t_bloc *)(bloc))->end), 1);
+	ft_putnbr((int)(((t_bloc *)(bloc))->end));//, 1);
 	ft_putstr(" : ");
 	ft_putnbr((int)(((t_bloc *)(bloc))->size));
 	ft_putendl(" octets");
@@ -51,7 +53,7 @@ void		show_alloc_mem(void)
 	ft_putstr("tpage : size = ");
 	ft_putnbr(((t_page *)(tpage))->allowed);
 	ft_putstr("\nnext = ");
-	ft_putstr((char *)((t_page *)(tpage))->next);
+	ft_putnbr((size_t)((t_page *)(tpage))->next);
 	write(1, "\n", 1);
 	if (spage)
 		sbloc = (t_bloc *)(spage + sizeof(t_page));
@@ -121,6 +123,6 @@ void		show_alloc_mem(void)
 		}
 	}
 	ft_putstr("Total : ");
-	ft_putlnbr(n);
+	ft_putnbr(n);
 	write(1, "\n", 1);
 }

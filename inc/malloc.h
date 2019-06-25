@@ -6,7 +6,7 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/09/02 14:25:56 by nbelouni          #+#    #+#             */
-/*   Updated: 2017/01/02 16:54:57 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/06/25 13:28:23 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
-#include <libft.h>
+#include "libft.h"
 
 # define TINY			0
 # define SMALL			1
@@ -35,12 +35,6 @@ typedef enum		e_bool
 	TRUE
 }					t_bool;
 
-typedef struct		s_page
-{
-	int				allowed;
-	struct s_page	*next;
-}					t_page;
-
 typedef struct		s_bloc
 {
 //	int				type;
@@ -50,11 +44,18 @@ typedef struct		s_bloc
 	struct s_bloc	*next;
 }					t_bloc;
 
+typedef struct		s_page
+{
+	int				allowed;
+	t_bloc			*blocs;
+	struct s_page	*next;
+}					t_page;
+
 typedef struct		s_alloc
 {
-	void			*tiny;
-	void			*small;
-	void			*large;
+	t_page			*tiny;
+	t_page			*small;
+	t_page			*large;
 }					t_alloc;
 
 t_alloc				g_allowed;
