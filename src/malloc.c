@@ -6,12 +6,51 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/02 21:05:52 by nbelouni          #+#    #+#             */
-/*   Updated: 2019/06/25 14:07:26 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/11/06 20:06:00 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "malloc.h"
 #include <stdio.h>
+
+void	init_pages(size_t type)
+{
+	void	*tmp;
+	void	*tmp2;
+//	int i = 0;
+
+	if (type == TINY)
+	{
+		tmp = g_allowed.tiny;
+		tmp2 = g_allowed.tiny + GETPAGESIZE;
+		ft_putnbr((int)tmp2 - (int)tmp);N("");
+	}
+	else if (type == SMALL)
+	{
+		tmp = g_allowed.small;
+		tmp2 = tmp + GETPAGESIZE;
+		ft_putnbr(GETPAGESIZE);N("");
+		ft_putnbr((int)tmp);N("");
+		ft_putnbr((int)g_allowed.small);N("");
+		ft_putnbr((int)g_allowed.small + GETPAGESIZE);N("");
+		ft_putnbr((int)tmp2);N("");
+		ft_putnbr((int)tmp2 - (int)tmp);N("");
+	}
+	else
+		return;
+/*	while (i < 10)
+	{
+		tmp->next = tmp2;
+		tmp = tmp2;
+		ft_putnbr(tmp->allowed);N("");
+		ft_putnbr((int)tmp);N("");
+		tmp2 += GETPAGESIZE;
+		ft_putnbr((int)tmp2);N("");
+		i++;
+	}
+		tmp->next = NULL;
+*/
+}
 
 t_bool	first_init()
 {
@@ -22,8 +61,12 @@ t_bool	first_init()
 	else
 	{
 		g_allowed.large = NULL;
-		g_allowed.small = NULL;
-		g_allowed.tiny = NULL;
+		g_allowed.small = mmap(0, GETPAGESIZE * 10, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+		ft_bzero(g_allowed.small, GETPAGESIZE * 10);
+
+		init_pages(SMALL);
+		g_allowed.tiny = mmap(0, GETPAGESIZE * 10, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+		init_pages(TINY);
 		start = 1;
 		ft_putendl("INIT");
 	}
@@ -150,6 +193,7 @@ void		*allow_tiny_bloc(size_t size)
 	put_alloc_size(TINY);
 	if (g_allowed.tiny == NULL)
 	{
+	ft_putendl("_________1.0");
 		/*
 		tmp = mmap(0, GETPAGESIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 
@@ -177,7 +221,7 @@ void		*allow_tiny_bloc(size_t size)
 	while (tmp2)
 	{
 		ft_putendl("_________2.1");
-		if ((size_t)(GETPAGESIZE - ((t_page *)(tmp2))->allowed) > sizeof(t_bloc) + size)
+		if ((size_t)(GETPAGESIZE * 10 - ((t_page *)(tmp2))->allowed) > sizeof(t_bloc) + size)
 		{
 		ft_putendl("_________2.2");
 			void *tmp3;

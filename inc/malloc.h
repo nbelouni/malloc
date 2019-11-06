@@ -6,7 +6,7 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/09/02 14:25:56 by nbelouni          #+#    #+#             */
-/*   Updated: 2019/06/25 13:28:23 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/11/06 18:49:47 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@
 # define SMALL_ALLOC	512
 
 # define GETPAGESIZE	getpagesize()
+
+# define N(x)			ft_putendl(x)
 
 typedef enum		e_bool
 {
