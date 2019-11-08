@@ -6,7 +6,7 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/02 21:05:52 by nbelouni          #+#    #+#             */
-/*   Updated: 2019/11/07 16:28:31 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/11/08 15:10:25 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,51 +16,57 @@
 void	init_pages(size_t type)
 {
 	N("init_pages()");
-	t_memory_array	*tmp;
-	t_memory_array	*tmp2;
 
-	if (g_allowed.tiny == NULL)
-		N("tiny null");
-	if (g_allowed.small == NULL)
-		N("small null");
+	t_memory_chunk	*tmp;
+	void			*tmp2;
+	size_t			*pages;
+
 	if (type == TINY)
 	{
 		tmp = g_allowed.tiny;
+		pages = &g_allowed.tiny_pages;
 	}
 	else if (type == SMALL)
 	{
 		tmp = g_allowed.small;
+		pages = &g_allowed.small_pages;
 	}
 	else
 		return;
 
-	if (INIT_MAX_PAGES > 1)
+	N("________1");	
+	while (tmp && tmp->next)
 	{
-		tmp2 = tmp;
-		tmp2 += GETPAGESIZE / sizeof(t_memory_array);
+		tmp = tmp->next;
 	}
-	else
-		tmp2 = NULL;
-	tmp->size = 0;
-	ft_putstr("tmp->size : ");ft_putnbr((int)tmp->size);N("");
-
-	int i = 0;
-	while (i < INIT_MAX_PAGES)
+	
+//	N("________2");	
+	tmp2 = mmap(0, GETPAGESIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+//	N("________3");	
+	((t_memory_chunk *)tmp2)->size = GETPAGESIZE - (sizeof(t_memory_chunk *) +  sizeof(t_memory_chunk));
+//	N("________4");	
+	((t_memory_chunk *)tmp2)->state = NOT_ALLOWED;
+//	N("________5");	
+	((t_memory_chunk *)tmp2)->next = NULL;
+//	N("________6");	
+	if (*pages == 0)
 	{
-			ft_putstr("tmp : ");ft_putnbr((int)tmp);N("");
-			ft_putstr("tmp2 : ");ft_putnbr((int)tmp2);N("");
-			ft_putstr("space between tmp - tmp2 : ");ft_putnbr((int)tmp2 - (int)tmp);N("");
-		tmp->size = 0;
-		tmp->next = tmp2;
-		if (i < INIT_MAX_PAGES - 1)
+		if (type == TINY)
 		{
-			tmp = tmp2;
-			tmp2 += GETPAGESIZE / sizeof(t_memory_array);
+			g_allowed.tiny = tmp2;
 		}
-		i++;
+		else if (type == SMALL)
+		{
+			g_allowed.small = tmp2;
+		}
+	}	
+	else
+	{
+//	N("________8");	
+		tmp->next = tmp2;
 	}
-
-	tmp->next = NULL;
+//	N("________9");	
+	*pages += 1;
 }
 
 t_bool	first_init()
@@ -72,29 +78,95 @@ t_bool	first_init()
 	else
 	{
 		g_allowed.large = NULL;
-		g_allowed.small = mmap(0, GETPAGESIZE * INIT_MAX_PAGES, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-		ft_bzero(g_allowed.small, GETPAGESIZE * INIT_MAX_PAGES);
+		g_allowed.large_pages = 0;
 
+		g_allowed.small = NULL;
+		g_allowed.small_pages = 0;
 		init_pages(SMALL);
 
-		g_allowed.tiny = mmap(0, GETPAGESIZE * INIT_MAX_PAGES, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-		ft_bzero(g_allowed.small, GETPAGESIZE * INIT_MAX_PAGES);
+		g_allowed.tiny = NULL;
+		g_allowed.tiny_pages = 0;
 		init_pages(TINY);
 		start = 1;
 	}
 	return (FALSE);
 }
 
-void		alloc_array(size_t size, size_t type)
+void		*alloc_chunk(size_t size, size_t type)
 {
-	void	*tmp;
+	N("alloc_chunk()");	
+	void			*tmp;
+	size_t			pages;
+	t_memory_chunk	*tmp2;
 
-	if (type == TINY)
+	static size_t			x = 0;
+
+	V("total allocated : ", x);
+	(void)type;
+//	if (type == TINY)
 		tmp = g_allowed.tiny;
+		pages = g_allowed.tiny_pages;
+//	else
+//		tmp = NULL;
+//	N("_____________1");
+	V("pages : ", pages);	
+	V("total  size : ", GETPAGESIZE * pages);	
+	while (((t_memory_chunk *)tmp)->next)
+	{
+	//	ft_putstr("tmp->size : ");ft_putnbr(((t_memory_chunk *)tmp)->size);N("");
+//		N("_____________1.2");
+		if (((t_memory_chunk *)tmp)->state == FREED && size <= ((t_memory_chunk *)tmp)->size)
+		{
+			N("_____________2");
+			((t_memory_chunk *)tmp)->state = ALLOWED;
+	x += size + sizeof(t_memory_chunk);
+			return (tmp + sizeof(t_memory_chunk));
+		}
+		else if (((t_memory_chunk *)tmp)->state == NOT_ALLOWED)
+		{
+			ft_putstr("tmp->size : ");ft_putnbr(((t_memory_chunk *)tmp)->size);N("");
+			if (((t_memory_chunk *)tmp)->size < size)
+			{
+				init_pages(type);
+				tmp = ((t_memory_chunk *)tmp)->next;
+			}
+			N("_____________3");
 
-	while (tmp->size == GETPAGESIZE)
-		tmp = tmp->next;
+			tmp2 = tmp + sizeof(t_memory_chunk) + size;
+			tmp2->size = ((t_memory_chunk *)tmp)->size - (size + sizeof(t_memory_chunk));
+			tmp2->state = NOT_ALLOWED;
+			tmp2->next = NULL;
+
+			((t_memory_chunk *)tmp)->size = size;
+			((t_memory_chunk *)tmp)->state = ALLOWED;
+			((t_memory_chunk *)tmp)->next = tmp2;
+
+	x += size + sizeof(t_memory_chunk);
+			return (tmp + sizeof(t_memory_chunk));
+		}
+		tmp = ((t_memory_chunk *)tmp)->next;
+	}
+	N("_____________4");
+
+	ft_putstr("tmp->size before allocate chunk : ");ft_putnbr(((t_memory_chunk *)tmp)->size);N("");
+	if (((t_memory_chunk *)tmp)->size < size)
+	{
+		init_pages(type);
+		tmp = ((t_memory_chunk *)tmp)->next;
+	}
+	tmp2 = tmp + sizeof(t_memory_chunk) + size;
+	tmp2->size = ((t_memory_chunk *)tmp)->size - (size + sizeof(t_memory_chunk));
+	tmp2->state = NOT_ALLOWED;
+	tmp2->next = NULL;
+
+	((t_memory_chunk *)tmp)->size = size;
+	((t_memory_chunk *)tmp)->state = ALLOWED;
+	((t_memory_chunk *)tmp)->next = tmp2;
+
+	ft_putstr("tmp->size : ");ft_putnbr(((t_memory_chunk *)tmp)->size);N("");
+	ft_putstr("tmp2->size : ");ft_putnbr(((t_memory_chunk *)tmp2)->size);N("");
+	x += size + sizeof(t_memory_chunk);
+	return (tmp + sizeof(t_memory_chunk));
 
 }
 
@@ -111,21 +183,24 @@ void		*malloc(size_t size)
 	if (size > SMALL_ALLOC)
 	{
 		ft_putendl("LARGE");
+		return alloc_chunk(size, LARGE);
 	}
 
 	/*
 	 * SMALL
 	 */
 	else if (size > TINY_ALLOC)
+	{
 		ft_putendl("SMALL");
-
+		return alloc_chunk(size, SMALL);
+	}
 	/*
 	 * TINY
 	 */
 	else
 	{
-//		alloc_array();
 		ft_putendl("TINY");
+		return alloc_chunk(size, TINY);
 	}
 
 

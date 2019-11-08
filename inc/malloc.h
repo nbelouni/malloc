@@ -6,7 +6,7 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/09/02 14:25:56 by nbelouni          #+#    #+#             */
-/*   Updated: 2019/11/07 17:11:55 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/11/08 14:43:38 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,17 +27,25 @@
 # define TINY_ALLOC		1024
 # define SMALL_ALLOC	4096
 
-# define INIT_MAX_PAGES	4
+# define INIT_MAX_PAGES	1
 
 # define GETPAGESIZE	getpagesize()
 
 # define N(x)			ft_putendl(x)
+# define V(x, y)		ft_putstr(x);ft_putnbr(y);ft_putendl("")
 
 typedef enum		e_bool
 {
 	FALSE,
 	TRUE
 }					t_bool;
+
+typedef enum		e_memory_state
+{
+	NOT_ALLOWED,
+	ALLOWED,
+	FREED
+}					t_memory_state;
 
 //typedef struct		s_bloc
 //{
@@ -64,18 +72,22 @@ typedef enum		e_bool
 //
 //t_alloc				g_allowed;
 
-typedef struct				s_memory_array
+typedef struct				s_memory_chunk
 {
 	size_t					size;
-	struct s_memory_array	*next;
-}							t_memory_array;
+	t_memory_state			state;
+	struct s_memory_chunk	*next;
+}							t_memory_chunk;
 
 
 typedef struct				s_alloc
 {
 	void					*tiny;
+	size_t					tiny_pages;
 	void					*small;
+	size_t					small_pages;
 	void					*large;
+	size_t					large_pages;
 }							t_alloc;
 
 t_alloc						g_allowed;

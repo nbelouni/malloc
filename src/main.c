@@ -6,7 +6,7 @@
 /*   By: nbelouni <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/09/02 14:25:03 by nbelouni          #+#    #+#             */
-/*   Updated: 2019/11/07 13:30:10 by nbelouni         ###   ########.fr       */
+/*   Updated: 2019/11/08 15:06:46 by nbelouni         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,5 +35,7 @@ int		main()
 	{
 		ft_putendl(s[i]);
 	}
+	char *s2 = malloc(sizeof(char ) * 1024 * 12);
+	(void)s2;
 	return (0);
 }
