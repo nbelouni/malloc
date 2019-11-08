@@ -7,7 +7,7 @@ CC_FLAGS = -Wall -Werror -Wextra
 LIB = -L./libft -lft -lpthread
 INC = -I ./inc -I ./libft/inc
 
-SRC = show_alloc_mem.c malloc.c
+SRC = show_alloc_mem.c malloc.c 
 SRC_DIR = ./src/
 SRCS = $(addprefix $(SRC_DIR), $(SRC))
 
@@ -43,5 +43,10 @@ re: fclean all
 runtest: re
 	$(CC) -c src/main.c $(CC_FLAGS) $(INC)
 	$(CC) -o test main.o  $(LIB) -L. -lft_malloc 
-	env DYLD_LIBRARY_PATH=`pwd` DYLD_INSERT_LIBRARIES=libft_malloc.so DYLD_FORCE_FLAT_NAMESPACE=1  ./test
+	env DYLD_LIBRARY_PATH=`pwd` DYLD_INSERT_LIBRARIES=libft_malloc.so DYLD_FORCE_FLAT_NAMESPACE=1  ls /tmp
+
+runls: re
+	$(CC) -c src/main.c $(CC_FLAGS) $(INC)
+	$(CC) -o test main.o  $(LIB) -L. -lft_malloc 
+	env DYLD_LIBRARY_PATH=`pwd` DYLD_INSERT_LIBRARIES=libft_malloc.so DYLD_FORCE_FLAT_NAMESPACE=1  ls /tmp
 
